@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>LifeLine AI | Emergency Triage System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0d6e6e',
+                        'primary-dark': '#0a5858',
+                        'primary-light': '#1a8c8c',
+                        secondary: '#2c7da0',
+                        accent: '#61c0a8',
+                        emergency: '#e74c3c',
+                        warning: '#f39c12',
+                        success: '#27ae60',
+                        info: '#3498db',
+                        whatsapp: '#25D366',
+                        dark: '#1a2a3a',
+                        darker: '#0f1922',
+                        gray: '#7f8c8d',
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulse-primary {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13,110,110,0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(13,110,110,0); }
+        }
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slide-down {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes modal-pop {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .animate-pulse-primary {
+            animation: pulse-primary 1.5s infinite;
+        }
+        .animate-slide-up {
+            animation: slide-up 0.5s ease-out;
+        }
+        .animate-slide-down {
+            animation: slide-down 0.4s ease-out;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(13,110,110,0.3);
+            border-top-color: #0d6e6e;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e8f4f8 0%, #d4eaf0 100%);
+            min-height: 100vh;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #0d6e6e 0%, #2c7da0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(13,110,110,0.2);
+            animation: pulse 2s infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.3);
+                opacity: 0;
+            }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            animation: modal-pop 0.3s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .doctor-card:hover {
+            transform: translateY(-4px);
+            transition: all 0.3s;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0d6e6e;
+            border-radius: 10px;
+        }
+        
+        .hospital-card {
+            transition: all 0.3s ease;
+        }
+        .hospital-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+        
+        .filter-chip {
+            transition: all 0.2s ease;
+        }
+        .filter-chip.active {
+            background-color: #0d6e6e;
+            color: white;
+        }
+    </style>
+</head>
+<body class="font-inter">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-primary/10">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+                <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white shadow-md">
+                    <i class="fas fa-heartbeat text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-primary">LifeLine AI</h1>
+                    <p class="text-xs text-gray-500">Emergency Triage System</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="openHospitalFinder()" class="px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium hover:bg-primary/20 transition">
+                    <i class="fas fa-search mr-1"></i> Find Hospitals
+                </button>
+                <button onclick="openDoctorConsult()" class="px-3 py-1.5 bg-secondary/10 text-secondary rounded-full text-xs font-medium hover:bg-secondary/20 transition">
+                    <i class="fab fa-whatsapp mr-1"></i> Consult Doctor
+                </button>
+                <span class="px-3 py-1 bg-success/10 text-success rounded-full text-xs flex items-center gap-1">
+                    <span class="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+                    Live
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 pt-24 pb-16">
+        
+        <!-- Language Selection Banner -->
+        <div class="text-center mb-6 animate-slide-down">
+            <div class="inline-flex items-center gap-2 bg-white/80 rounded-full p-1 shadow-sm">
+                <button onclick="setLanguage('en')" id="langEnBtn" class="px-4 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-white">English</button>
+                <button onclick="setLanguage('hi')" id="langHiBtn" class="px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-600 hover:text-primary">हिंदी</button>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="text-center mb-10 animate-slide-down">
+            <div class="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-4">
+                <i class="fas fa-microphone-alt text-primary text-sm"></i>
+                <span class="text-xs text-primary font-medium" id="voiceTagText">AI-POWERED VOICE TRIAGE</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                <span class="gradient-text" id="heroTitle1">Instant Emergency</span><br>
+                <span class="text-dark" id="heroTitle2">Assessment & Routing</span>
+            </h1>
+            <p class="text-gray-600 text-lg max-w-2xl mx-auto" id="heroDesc">
+                Speak your symptoms. Our AI instantly analyzes severity, provides guidance, and finds the best hospital near you.
+            </p>
+        </div>
+
+        <!-- Voice Input Card -->
+        <div class="bg-white rounded-3xl shadow-xl p-8 mb-8 text-center border border-gray-100 animate-slide-up relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-full blur-3xl"></div>
+            
+            <div class="relative">
+                <div id="micPulseRing" class="pulse-ring hidden"></div>
+                <button id="micBtn" class="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-secondary text-white text-4xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 relative z-10">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
+            
+            <div id="statusArea" class="mt-6">
+                <div id="idleState" class="text-gray-500">
+                    <i class="fas fa-circle-info mr-2 text-primary"></i>
+                    <span id="idleText">Click the microphone and describe your symptoms</span>
+                </div>
+                <div id="listeningState" class="text-primary hidden">
+                    <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                    <span id="listeningText">Listening... speak clearly about your symptoms</span>
+                </div>
+                <div id="processingState" class="text-warning hidden">
+                    <i class="fas fa-spinner fa-pulse mr-2"></i>
+                    <span id="processingText">AI analyzing your symptoms...</span>
+                </div>
+            </div>
+
+            <div id="patientSaidBox" class="hidden mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <p class="text-xs text-gray-500 mb-1">
+                    <i class="fas fa-comment-dots mr-1 text-primary"></i> <span id="youSaidText">You said:</span>
+                </p>
+                <p id="patientSaidText" class="text-dark font-medium text-lg italic">"..."</p>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden space-y-6 animate-slide-up">
+            <!-- Severity Alert Card -->
+            <div id="severityBox" class="bg-white rounded-3xl p-6 shadow-lg border-l-8 border-l-primary">
+                <div class="flex gap-4 flex-wrap md:flex-nowrap">
+                    <div class="text-5xl">
+                        <i id="severityIcon" class="fas fa-heartbeat text-primary"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h2 id="severityTitle" class="text-2xl font-bold mb-2 text-dark">Emergency Detected</h2>
+                        <p id="severityDesc" class="text-gray-600 mb-3">Critical condition requiring immediate attention</p>
+                        <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm text-dark">
+                            <i class="fas fa-stethoscope text-primary"></i>
+                            <span id="specialtyName" class="font-medium">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- First Aid Instructions -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-notes-medical text-primary text-xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-dark" id="instructionsTitle">Immediate Instructions</h3>
+                </div>
+                <p id="instructionText" class="text-gray-600 leading-relaxed">Stay calm. Do not eat or drink until assessed by a medical professional.</p>
+                <div id="riskTags" class="mt-4 flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Ambulance Alert -->
+            <div id="ambulanceBox" class="bg-gradient-to-r from-emergency/10 to-primary/10 rounded-3xl p-6 shadow-lg border-2 border-emergency/30 hidden">
+                <div class="flex items-center gap-4 flex-wrap">
+                    <div class="animate-bounce text-5xl">🚑</div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-emergency text-lg" id="ambulanceTitle">Emergency Ambulance Required</h4>
+                        <p class="text-sm text-gray-600" id="ambulanceDesc">Based on symptom severity, immediate emergency medical services are recommended.</p>
+                    </div>
+                    <button id="callAmbulanceBtn" class="px-6 py-2 bg-emergency hover:bg-emergency/80 text-white rounded-full font-semibold transition shadow-md">
+                        <i class="fas fa-phone mr-2"></i>Call 108
+                    </button>
+                </div>
+            </div>
+
+            <!-- Best Hospital Match -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-yellow-400/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-star text-yellow-500 text-sm"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg text-dark" id="bestHospitalTitle">Best Hospital Match</h3>
+                    </div>
+                    <button onclick="openHospitalFinder()" class="text-primary text-sm hover:underline">
+                        <i class="fas fa-filter mr-1"></i> Filter & More
+                    </button>
+                </div>
+                <div id="bestHospitalCard" class="bg-white rounded-3xl p-6 shadow-lg border border-green-200">
+                    <div class="flex items-center justify-center py-8">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alternative Hospitals -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-8 h-8 bg-gray-400/10 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-hospital text-gray-500 text-sm"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-dark" id="altHospitalTitle">Alternative Options</h3>
+                </div>
+                <div id="altHospitalsList" class="space-y-3">
+                    <div class="bg-white rounded-xl p-4 text-center text-gray-500 shadow-sm">Loading alternatives...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor Consultation CTA -->
+        <div id="doctorConsultCTA" class="hidden mt-8 bg-gradient-to-r from-secondary/10 to-primary/10 rounded-2xl p-6 text-center">
+            <i class="fab fa-whatsapp text-4xl text-whatsapp mb-3 block animate-pulse"></i>
+            <h3 class="font-bold text-dark text-lg mb-2" id="consultTitle">Need Professional Advice?</h3>
+            <p class="text-gray-600 text-sm mb-4" id="consultDesc">For non-emergency concerns, connect with a doctor instantly on WhatsApp.</p>
+            <button onclick="openDoctorConsult()" class="px-6 py-2 bg-whatsapp hover:bg-whatsapp/90 text-white rounded-full font-semibold transition">
+                <i class="fab fa-whatsapp mr-2"></i> <span id="consultBtnText">Consult on WhatsApp</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Hospital Finder Modal -->
+    <div id="hospitalModal" class="modal">
+        <div class="modal-content bg-white rounded-3xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                <h2 class="text-2xl font-bold text-dark"><i class="fas fa-hospital text-primary mr-2"></i>Find Hospitals & Clinics in Indore</h2>
+                <button onclick="closeHospitalModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
+                <!-- Filters Sidebar -->
+                <div class="md:w-80 p-6 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+                    <h3 class="font-semibold mb-4 text-dark"><i class="fas fa-filter mr-2"></i>Filters</h3>
+                    
+                    <div class="mb-4">
+                        <label class="text-sm text-gray-600 block mb-2">Specialty / Department</label>
+                        <select id="filterSpecialty" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="all">All Specialties</option>
+                            <option value="Orthopedics">🦴 Orthopedics (Joints/Bones)</option>
+                            <option value="Cardiology">❤️ Cardiology (Heart)</option>
+                            <option value="Neurology">🧠 Neurology (Brain/Nerves)</option>
+                            <option value="Pediatrics">👶 Pediatrics (Children)</option>
+                            <option value="Gynecology">👩 Gynecology (Women)</option>
+                            <option value="Dermatology">🧴 Dermatology (Skin)</option>
+                            <option value="Gastroenterology">🍽️ Gastroenterology (Stomach)</option>
+                            <option value="Pulmonology">🌬️ Pulmonology (Lungs)</option>
+                            <option value="ENT">👂 ENT (Ear/Nose/Throat)</option>
+                            <option value="Ophthalmology">👁️ Ophthalmology (Eyes)</option>
+                            <option value="Emergency">🚨 Emergency Medicine</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="text-sm text-gray-600 block mb-2">Max Distance</label>
+                        <select id="filterDistance" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="3">Within 3 km</option>
+                            <option value="5">Within 5 km</option>
+                            <option value="10" selected>Within 10 km</option>
+                            <option value="20">Within 20 km</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="text-sm text-gray-600 block mb-2">Price Range</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="filterBudget" class="rounded text-primary"> 
+                                <span class="text-sm">💰 Budget Friendly (₹)</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="filterMid" class="rounded text-primary"> 
+                                <span class="text-sm">💵 Mid Range (₹₹)</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="filterPremium" class="rounded text-primary"> 
+                                <span class="text-sm">💎 Premium (₹₹₹)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="text-sm text-gray-600 block mb-2">Facilities</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="filterICU" class="rounded text-primary"> 
+                                <span class="text-sm">🏥 Has ICU</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="filterVentilator" class="rounded text-primary"> 
+                                <span class="text-sm">🫁 Ventilator Available</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="filter24x7" class="rounded text-primary"> 
+                                <span class="text-sm">⏰ 24/7 Emergency</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="filterAmbulance" class="rounded text-primary"> 
+                                <span class="text-sm">🚑 Ambulance Service</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="text-sm text-gray-600 block mb-2">Rating</label>
+                        <select id="filterRating" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="0">Any Rating</option>
+                            <option value="4">4★ & above</option>
+                            <option value="4.5">4.5★ & above</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="applyFilters()" class="w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary-dark transition">
+                        Apply Filters
+                    </button>
+                    <button onclick="resetFilters()" class="w-full mt-2 bg-gray-200 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-300 transition">
+                        Reset All
+                    </button>
+                </div>
+                
+                <!-- Hospital List -->
+                <div class="flex-1 p-6 overflow-y-auto" id="hospitalListContainer">
+                    <div class="flex items-center justify-center py-8">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Consultation Modal -->
+    <div id="doctorModal" class="modal">
+        <div class="modal-content bg-white rounded-3xl max-w-2xl w-full mx-4">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-dark"><i class="fab fa-whatsapp text-whatsapp mr-2"></i>Consult a Doctor on WhatsApp</h2>
+                <button onclick="closeDoctorModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="flex items-center gap-4 p-4 bg-green-50 rounded-xl mb-6">
+                    <div class="w-16 h-16 bg-whatsapp rounded-full flex items-center justify-center text-white text-2xl">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-dark text-lg">Dr. Dilip Surawat</h3>
+                        <p class="text-gray-500 text-sm">Available 24/7 on WhatsApp</p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="text-sm text-gray-600 block mb-2">Describe your symptoms</label>
+                    <textarea id="consultMessage" rows="4" class="w-full p-3 border border-gray-300 rounded-xl focus:border-primary focus:outline-none" placeholder="Example: I have severe knee pain while walking..."></textarea>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="text-sm text-gray-600 block mb-2">Select consultation type</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="selectConsultType('chat')" class="consult-type-btn p-3 rounded-xl border-2 border-gray-200 hover:border-whatsapp transition text-center" data-type="chat">
+                            <i class="fab fa-whatsapp text-2xl text-whatsapp mb-1 block"></i>
+                            <span class="text-sm font-medium">Chat</span>
+                        </button>
+                        <button onclick="selectConsultType('audio')" class="consult-type-btn p-3 rounded-xl border-2 border-gray-200 hover:border-whatsapp transition text-center" data-type="audio">
+                            <i class="fas fa-phone-alt text-2xl text-whatsapp mb-1 block"></i>
+                            <span class="text-sm font-medium">Audio Call</span>
+                        </button>
+                        <button onclick="selectConsultType('video')" class="consult-type-btn p-3 rounded-xl border-2 border-gray-200 hover:border-whatsapp transition text-center" data-type="video">
+                            <i class="fas fa-video text-2xl text-whatsapp mb-1 block"></i>
+                            <span class="text-sm font-medium">Video Call</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="consultTypeSelected" class="text-center mb-4 hidden">
+                    <span class="inline-block px-4 py-2 bg-whatsapp/10 text-whatsapp rounded-full text-sm">
+                        <i class="fab fa-whatsapp mr-1"></i> <span id="selectedTypeText">Chat</span> on WhatsApp
+                    </span>
+                </div>
+                
+                <button id="startConsultBtn" onclick="startWhatsAppConsultation()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-xl"></i> 
+                    <span>Continue on WhatsApp →</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-12 pt-8 pb-6 border-t border-gray-200">
+        <div class="flex items-center justify-center gap-2 text-xs text-gray-500 mb-2">
+            <i class="fas fa-shield-alt text-primary"></i>
+            <span>AI-Powered Decision Support Tool</span>
+        </div>
+        <p class="text-xs text-gray-400">⚠️ Final medical decisions should be made by healthcare professionals. In emergencies, call emergency services immediately.</p>
+        <p class="text-xs text-gray-400 mt-2">© 2024 LifeLine AI | Real-time Hospital Routing System for Indore</p>
+    </div>
+
+    <script>
+        // ============================================
+        // COMPLETE HOSPITAL DATABASE FOR INDORE
+        // ============================================
+        
+        const hospitalsDatabase = [
+            // ========== ORTHOPEDICS / JOINTS SPECIALISTS ==========
+            { 
+                name: "Bone & Joint Clinic Indore", 
+                type: "Clinic",
+                address: "Scheme No 54, Near Apollo Hospital, Indore",
+                lat: 22.7316, lng: 75.8646,
+                distance_km: 2.1, eta_minutes: 8,
+                rating: 4.9, reviews: 234,
+                specialty: "Orthopedics", 
+                price_level: "Budget Friendly",
+                price_symbol: "₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: false,
+                phone: "0731-4981234", 
+                available_beds: 0,
+                doctors: ["Dr. Rajesh Sharma (Orthopedic Surgeon)", "Dr. Priya Mehta (Physiotherapist)"],
+                services: ["Joint Replacement", "Arthroscopy", "Physiotherapy", "Sports Injury"],
+                waiting_time: 15
+            },
+            { 
+                name: "Indore Joint Replacement Centre", 
+                type: "Specialty Hospital",
+                address: "Vijay Nagar, Near Bombay Hospital, Indore",
+                lat: 22.7482, lng: 75.8856,
+                distance_km: 3.5, eta_minutes: 12,
+                rating: 4.8, reviews: 567,
+                specialty: "Orthopedics", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: true, has_ventilator: true, has_24x7: true, has_ambulance: true,
+                phone: "0731-4001234", 
+                available_beds: 12,
+                doctors: ["Dr. Anil Khare (Joint Replacement)", "Dr. Neha Gupta (Rheumatology)"],
+                services: ["Knee Replacement", "Hip Replacement", "Shoulder Surgery", "Spine Surgery"],
+                waiting_time: 25
+            },
+            { 
+                name: "Medanta Hospital Indore", 
+                type: "Multi-Specialty Hospital",
+                address: "Scheme No 54, PU-4, Indore",
+                lat: 22.7316, lng: 75.8646,
+                distance_km: 2.3, eta_minutes: 9,
+                rating: 4.8, reviews: 1234,
+                specialty: "Multi-specialty", 
+                price_level: "Premium",
+                price_symbol: "₹₹₹",
+                has_icu: true, has_ventilator: true, has_24x7: true, has_ambulance: true,
+                phone: "0731-6666666", 
+                available_beds: 45,
+                doctors: ["Dr. Naresh Trehan", "Dr. Rakesh Sharma (Ortho)", "Dr. Sandeep Jain"],
+                services: ["Orthopedics", "Cardiology", "Neurology", "Emergency"],
+                waiting_time: 30
+            },
+            { 
+                name: "Apollo Rajshree Hospital", 
+                type: "Multi-Specialty Hospital",
+                address: "Plot No 2, Scheme No 54, Vijay Nagar, Indore",
+                lat: 22.7482, lng: 75.8856,
+                distance_km: 3.1, eta_minutes: 11,
+                rating: 4.7, reviews: 890,
+                specialty: "Cardiology", 
+                price_level: "Premium",
+                price_symbol: "₹₹₹",
+                has_icu: true, has_ventilator: true, has_24x7: true, has_ambulance: true,
+                phone: "0731-4660000", 
+                available_beds: 38,
+                doctors: ["Dr. Anil Agarwal (Cardio)", "Dr. Vivek Gupta (Ortho)"],
+                services: ["Cardiology", "Orthopedics", "Neurology", "Emergency"],
+                waiting_time: 35
+            },
+            { 
+                name: "CHL Hospital", 
+                type: "Multi-Specialty Hospital",
+                address: "AB Road, Near LIG Square, Indore",
+                lat: 22.7025, lng: 75.8478,
+                distance_km: 4.5, eta_minutes: 15,
+                rating: 4.6, reviews: 756,
+                specialty: "Neurology", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: true, has_ventilator: true, has_24x7: true, has_ambulance: true,
+                phone: "0731-2555555", 
+                available_beds: 28,
+                doctors: ["Dr. Ashok Sharma (Neurologist)", "Dr. Meera Das (Orthopedic)"],
+                services: ["Neurology", "Orthopedics", "Internal Medicine"],
+                waiting_time: 40
+            },
+            { 
+                name: "Bhandari Hospital", 
+                type: "Multi-Specialty Hospital",
+                address: "Mahalaxmi Nagar, Indore",
+                lat: 22.7254, lng: 75.8852,
+                distance_km: 3.8, eta_minutes: 13,
+                rating: 4.5, reviews: 512,
+                specialty: "Orthopedics", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: true, has_ventilator: true, has_24x7: true, has_ambulance: true,
+                phone: "0731-2777777", 
+                available_beds: 22,
+                doctors: ["Dr. S.K. Bhandari (Orthopedic)", "Dr. Ritu Mishra"],
+                services: ["Joint Replacement", "Trauma Care", "Physiotherapy"],
+                waiting_time: 28
+            },
+            // ========== CARDIOLOGY (HEART) ==========
+            { 
+                name: "Cardiac Care Center Indore", 
+                type: "Specialty Clinic",
+                address: "Geeta Bhawan Square, Indore",
+                lat: 22.7187, lng: 75.8575,
+                distance_km: 1.8, eta_minutes: 6,
+                rating: 4.7, reviews: 198,
+                specialty: "Cardiology", 
+                price_level: "Budget Friendly",
+                price_symbol: "₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: false,
+                phone: "0731-2435678", 
+                available_beds: 0,
+                doctors: ["Dr. Vinayak Khare", "Dr. Neeraj Gupta"],
+                services: ["ECG", "Echocardiography", "Treadmill Test"],
+                waiting_time: 20
+            },
+            // ========== NEUROLOGY ==========
+            { 
+                name: "Neurosciences & Spine Clinic", 
+                type: "Clinic",
+                address: "South Tukoganj, Indore",
+                lat: 22.7243, lng: 75.8632,
+                distance_km: 2.5, eta_minutes: 10,
+                rating: 4.8, reviews: 156,
+                specialty: "Neurology", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: true,
+                phone: "0731-4056789", 
+                available_beds: 0,
+                doctors: ["Dr. Ashish Agrawal (Neurosurgeon)"],
+                services: ["Spine Surgery", "Brain Surgery", "Migraine Treatment"],
+                waiting_time: 35
+            },
+            // ========== PEDIATRICS (CHILDREN) ==========
+            { 
+                name: "Child Care Clinic - Dr. Mehta", 
+                type: "Clinic",
+                address: "Sapna Sangeeta Road, Indore",
+                lat: 22.7302, lng: 75.8882,
+                distance_km: 4.2, eta_minutes: 14,
+                rating: 4.9, reviews: 345,
+                specialty: "Pediatrics", 
+                price_level: "Budget Friendly",
+                price_symbol: "₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: false,
+                phone: "0731-4987654", 
+                available_beds: 0,
+                doctors: ["Dr. Sandeep Mehta", "Dr. Kavita Mehta"],
+                services: ["Vaccination", "Child Development", "Nutrition"],
+                waiting_time: 18
+            },
+            // ========== GYNECOLOGY ==========
+            { 
+                name: "Women's Health Clinic", 
+                type: "Clinic",
+                address: "Palasia Square, Indore",
+                lat: 22.7375, lng: 75.8792,
+                distance_km: 3.2, eta_minutes: 11,
+                rating: 4.8, reviews: 278,
+                specialty: "Gynecology", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: false,
+                phone: "0731-4023456", 
+                available_beds: 0,
+                doctors: ["Dr. Shilpa Gupta", "Dr. Anjali Sharma"],
+                services: ["Pregnancy Care", "Fertility Treatment", "Women's Wellness"],
+                waiting_time: 22
+            },
+            // ========== DERMATOLOGY (SKIN) ==========
+            { 
+                name: "Skin Care & Laser Clinic", 
+                type: "Clinic",
+                address: "New Palasia, Indore",
+                lat: 22.7401, lng: 75.8756,
+                distance_km: 3.5, eta_minutes: 12,
+                rating: 4.7, reviews: 423,
+                specialty: "Dermatology", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: false,
+                phone: "0731-4298765", 
+                available_beds: 0,
+                doctors: ["Dr. Rajat Sinha", "Dr. Priyanka Jain"],
+                services: ["Laser Treatment", "Acne Treatment", "Hair Fall Solution"],
+                waiting_time: 25
+            },
+            // ========== GASTROENTEROLOGY ==========
+            { 
+                name: "Gastro & Liver Care Center", 
+                type: "Clinic",
+                address: "Vijay Nagar, Indore",
+                lat: 22.7482, lng: 75.8856,
+                distance_km: 3.8, eta_minutes: 13,
+                rating: 4.6, reviews: 189,
+                specialty: "Gastroenterology", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: true,
+                phone: "0731-4984321", 
+                available_beds: 0,
+                doctors: ["Dr. Sameer Desai"],
+                services: ["Endoscopy", "Liver Disease", "Acid Reflux"],
+                waiting_time: 30
+            },
+            // ========== PULMONOLOGY (LUNGS) ==========
+            { 
+                name: "Lungs & Sleep Clinic", 
+                type: "Clinic",
+                address: "Scheme No 78, Indore",
+                lat: 22.7545, lng: 75.8956,
+                distance_km: 5.2, eta_minutes: 17,
+                rating: 4.7, reviews: 167,
+                specialty: "Pulmonology", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: false, has_ventilator: true, has_24x7: false, has_ambulance: false,
+                phone: "0731-4078912", 
+                available_beds: 0,
+                doctors: ["Dr. Rajesh Khandelwal"],
+                services: ["Asthma Care", "COPD", "Sleep Apnea"],
+                waiting_time: 28
+            },
+            // ========== ENT (Ear, Nose, Throat) ==========
+            { 
+                name: "Ear Nose Throat Centre", 
+                type: "Clinic",
+                address: "Sapna Sangeeta Main Road, Indore",
+                lat: 22.7302, lng: 75.8882,
+                distance_km: 4.0, eta_minutes: 14,
+                rating: 4.8, reviews: 312,
+                specialty: "ENT", 
+                price_level: "Budget Friendly",
+                price_symbol: "₹",
+                has_icu: false, has_ventilator: false, has_24x7: false, has_ambulance: false,
+                phone: "0731-4567890", 
+                available_beds: 0,
+                doctors: ["Dr. Suresh Rathore"],
+                services: ["Hearing Test", "Sinus Treatment", "Tonsillectomy"],
+                waiting_time: 20
+            },
+            // ========== OPHTHALMOLOGY (EYES) ==========
+            { 
+                name: "Indore Eye Hospital", 
+                type: "Specialty Hospital",
+                address: "MG Road, Indore",
+                lat: 22.7182, lng: 75.8584,
+                distance_km: 1.5, eta_minutes: 5,
+                rating: 4.7, reviews: 567,
+                specialty: "Ophthalmology", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: false, has_ventilator: false, has_24x7: true, has_ambulance: true,
+                phone: "0731-2522222", 
+                available_beds: 10,
+                doctors: ["Dr. Ravi Joshi", "Dr. Kavita Singh"],
+                services: ["Cataract Surgery", "Lasik", "Glaucoma Treatment"],
+                waiting_time: 25
+            },
+            // ========== EMERGENCY / GENERAL ==========
+            { 
+                name: "Bombay Hospital Indore", 
+                type: "Multi-Specialty Hospital",
+                address: "New Palasia, Indore",
+                lat: 22.7401, lng: 75.8756,
+                distance_km: 3.2, eta_minutes: 11,
+                rating: 4.5, reviews: 1023,
+                specialty: "Emergency", 
+                price_level: "Premium",
+                price_symbol: "₹₹₹",
+                has_icu: true, has_ventilator: true, has_24x7: true, has_ambulance: true,
+                phone: "0731-2567890", 
+                available_beds: 52,
+                doctors: ["Dr. Sanjay Gupta", "Emergency Team"],
+                services: ["24/7 Emergency", "Trauma Care", "All Specialties"],
+                waiting_time: 20
+            },
+            { 
+                name: "Choithram Hospital", 
+                type: "Multi-Specialty Hospital",
+                address: "Manik Bagh Road, Indore",
+                lat: 22.7125, lng: 75.8432,
+                distance_km: 4.8, eta_minutes: 16,
+                rating: 4.4, reviews: 1876,
+                specialty: "Emergency", 
+                price_level: "Mid Range",
+                price_symbol: "₹₹",
+                has_icu: true, has_ventilator: true, has_24x7: true, has_ambulance: true,
+                phone: "0731-2361234", 
+                available_beds: 65,
+                doctors: ["Multi-specialty Team"],
+                services: ["All Departments", "24/7 Emergency", "ICU"],
+                waiting_time: 35
+            }
+        ];
+
+        // Symptom to specialty mapping
+        const symptomSpecialtyMap = {
+            // Joint/Bone related
+            'joint': 'Orthopedics', 'knee': 'Orthopedics', 'hip': 'Orthopedics', 'shoulder': 'Orthopedics',
+            'bone': 'Orthopedics', 'arthritis': 'Orthopedics', 'fracture': 'Orthopedics', 'sprain': 'Orthopedics',
+            'back pain': 'Orthopedics', 'neck pain': 'Orthopedics', 'sciatica': 'Orthopedics',
+            
+            // Heart related
+            'chest pain': 'Cardiology', 'heart': 'Cardiology', 'palpitation': 'Cardiology', 'bp': 'Cardiology',
+            'blood pressure': 'Cardiology', 'cardiac': 'Cardiology',
+            
+            // Brain/Nerve related
+            'headache': 'Neurology', 'migraine': 'Neurology', 'seizure': 'Neurology', 'dizziness': 'Neurology',
+            'vertigo': 'Neurology', 'brain': 'Neurology', 'nerve': 'Neurology',
+            
+            // Children related
+            'child': 'Pediatrics', 'baby': 'Pediatrics', 'kid': 'Pediatrics', 'vaccination': 'Pediatrics',
+            
+            // Women related
+            'pregnancy': 'Gynecology', 'period': 'Gynecology', 'menstrual': 'Gynecology', 'women': 'Gynecology',
+            
+            // Skin related
+            'skin': 'Dermatology', 'rash': 'Dermatology', 'allergy': 'Dermatology', 'hair': 'Dermatology',
+            'acne': 'Dermatology', 'eczema': 'Dermatology',
+            
+            // Stomach related
+            'stomach': 'Gastroenterology', 'gas': 'Gastroenterology', 'acidity': 'Gastroenterology',
+            'indigestion': 'Gastroenterology', 'ulcer': 'Gastroenterology',
+            
+            // Lung related
+            'breath': 'Pulmonology', 'cough': 'Pulmonology', 'asthma': 'Pulmonology', 'lungs': 'Pulmonology',
+            'cold': 'Pulmonology', 'fever with cough': 'Pulmonology',
+            
+            // ENT
+            'ear': 'ENT', 'nose': 'ENT', 'throat': 'ENT', 'hearing': 'ENT', 'sinus': 'ENT',
+            
+            // Eyes
+            'eye': 'Ophthalmology', 'vision': 'Ophthalmology', 'sight': 'Ophthalmology'
+        };
+
+        let currentLanguage = 'en';
+        let selectedConsultType = 'chat';
+        let allHospitals = hospitalsDatabase;
+        let detectedSpecialty = 'Emergency';
+        let currentSeverity = 4;
+
+        // Language translations
+        const translations = {
+            en: {
+                voiceTag: "AI-POWERED VOICE TRIAGE",
+                heroTitle1: "Instant Emergency",
+                heroTitle2: "Assessment & Routing",
+                heroDesc: "Speak your symptoms. Our AI instantly analyzes severity, provides guidance, and finds the best hospital near you.",
+                idleText: "Click the microphone and describe your symptoms",
+                listeningText: "Listening... speak clearly about your symptoms",
+                processingText: "AI analyzing your symptoms...",
+                youSaid: "You said:",
+                instructionsTitle: "Immediate Instructions",
+                bestHospitalTitle: "Best Hospital Match",
+                altHospitalTitle: "Alternative Options",
+                ambulanceTitle: "Emergency Ambulance Required",
+                ambulanceDesc: "Based on symptom severity, immediate emergency medical services are recommended.",
+                consultTitle: "Need Professional Advice?",
+                consultDesc: "For non-emergency concerns, connect with a doctor instantly on WhatsApp.",
+                consultBtnText: "Consult on WhatsApp"
+            },
+            hi: {
+                voiceTag: "एआई-पावर्ड वॉयस ट्राइएज",
+                heroTitle1: "तत्काल आपातकालीन",
+                heroTitle2: "मूल्यांकन और रूटिंग",
+                heroDesc: "अपने लक्षणों को बताएं। हमारा एआई तुरंत गंभीरता का विश्लेषण करता है, मार्गदर्शन प्रदान करता है, और आपके निकट सर्वश्रेष्ठ अस्पताल ढूंढता है।",
+                idleText: "माइक्रोफोन पर क्लिक करें और अपने लक्षणों का वर्णन करें",
+                listeningText: "सुन रहा हूँ... अपने लक्षणों के बारे में स्पष्ट रूप से बताएं",
+                processingText: "एआई आपके लक्षणों का विश्लेषण कर रहा है...",
+                youSaid: "आपने कहा:",
+                instructionsTitle: "तत्काल निर्देश",
+                bestHospitalTitle: "सर्वश्रेष्ठ अस्पताल मिलान",
+                altHospitalTitle: "वैकल्पिक विकल्प",
+                ambulanceTitle: "आपातकालीन एम्बुलेंस आवश्यक",
+                ambulanceDesc: "लक्षणों की गंभीरता के आधार पर, तत्काल आपातकालीन चिकित्सा सेवाओं की सिफारिश की जाती है।",
+                consultTitle: "पेशेवर सलाह चाहिए?",
+                consultDesc: "गैर-आपातकालीन मामलों के लिए, व्हाट्सएप पर तुरंत डॉक्टर से जुड़ें।",
+                consultBtnText: "व्हाट्सएप पर परामर्श करें"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.getElementById('langEnBtn').className = lang === 'en' ? 'px-4 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-white' : 'px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-600 hover:text-primary';
+            document.getElementById('langHiBtn').className = lang === 'hi' ? 'px-4 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-white' : 'px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-600 hover:text-primary';
+            
+            document.getElementById('voiceTagText').innerText = translations[lang].voiceTag;
+            document.getElementById('heroTitle1').innerText = translations[lang].heroTitle1;
+            document.getElementById('heroTitle2').innerText = translations[lang].heroTitle2;
+            document.getElementById('heroDesc').innerText = translations[lang].heroDesc;
+            document.getElementById('idleText').innerText = translations[lang].idleText;
+            document.getElementById('listeningText').innerText = translations[lang].listeningText;
+            document.getElementById('processingText').innerText = translations[lang].processingText;
+            document.getElementById('youSaidText').innerText = translations[lang].youSaid;
+            document.getElementById('instructionsTitle').innerText = translations[lang].instructionsTitle;
+            document.getElementById('bestHospitalTitle').innerText = translations[lang].bestHospitalTitle;
+            document.getElementById('altHospitalTitle').innerText = translations[lang].altHospitalTitle;
+            document.getElementById('ambulanceTitle').innerText = translations[lang].ambulanceTitle;
+            document.getElementById('ambulanceDesc').innerText = translations[lang].ambulanceDesc;
+            document.getElementById('consultTitle').innerText = translations[lang].consultTitle;
+            document.getElementById('consultDesc').innerText = translations[lang].consultDesc;
+            document.getElementById('consultBtnText').innerText = translations[lang].consultBtnText;
+        }
+
+        // Detect specialty from symptoms
+        function detectSpecialtyFromSymptoms(symptoms) {
+            const lowerSymptoms = symptoms.toLowerCase();
+            for (const [keyword, specialty] of Object.entries(symptomSpecialtyMap)) {
+                if (lowerSymptoms.includes(keyword)) {
+                    return specialty;
+                }
+            }
+            return 'Emergency'; // Default to Emergency if no match
+        }
+
+        // Get hospitals by specialty with sorting
+        function getHospitalsBySpecialty(specialty, limit = 5) {
+            let filtered = allHospitals.filter(h => 
+                h.specialty === specialty || 
+                (specialty === 'Emergency' && h.specialty === 'Emergency') ||
+                (specialty !== 'Emergency' && h.specialty === 'Multi-specialty')
+            );
+            
+            // Sort by rating (best first) and then by distance
+            filtered.sort((a, b) => {
+                if (b.rating !== a.rating) return b.rating - a.rating;
+                return a.distance_km - b.distance_km;
+            });
+            
+            return filtered.slice(0, limit);
+        }
+
+        // Get alternative hospitals (different specialties nearby)
+        function getAlternativeHospitals(excludeSpecialty, limit = 3) {
+            let alternatives = allHospitals.filter(h => 
+                h.specialty !== excludeSpecialty && 
+                h.specialty !== 'Emergency' &&
+                h.type === 'Multi-Specialty Hospital'
+            );
+            alternatives.sort((a, b) => a.distance_km - b.distance_km);
+            return alternatives.slice(0, limit);
+        }
+
+        // Generate severity based on symptoms
+        function analyzeSeverity(symptoms) {
+            const criticalKeywords = ['chest pain', 'heart attack', 'stroke', 'bleeding', 'unconscious', 'seizure', 'difficulty breathing'];
+            const urgentKeywords = ['fever', 'vomiting', 'diarrhea', 'severe pain', 'fracture', 'head injury'];
+            
+            const lowerSymptoms = symptoms.toLowerCase();
+            
+            for (let keyword of criticalKeywords) {
+                if (lowerSymptoms.includes(keyword)) {
+                    return { level: 1, text: "CRITICAL - Immediate emergency care required", ambulance: true };
+                }
+            }
+            
+            for (let keyword of urgentKeywords) {
+                if (lowerSymptoms.includes(keyword)) {
+                    return { level: 3, text: "URGENT - Medical attention needed within 1 hour", ambulance: false };
+                }
+            }
+            
+            return { level: 4, text: "NON-URGENT - Can visit clinic within 24 hours", ambulance: false };
+        }
+
+        // Display hospital results
+        function displayHospitalResults(symptoms) {
+            const specialty = detectSpecialtyFromSymptoms(symptoms);
+            detectedSpecialty = specialty;
+            const severity = analyzeSeverity(symptoms);
+            currentSeverity = severity.level;
+            
+            // Update severity UI
+            const severityBox = document.getElementById('severityBox');
+            const severityTitle = document.getElementById('severityTitle');
+            const severityDesc = document.getElementById('severityDesc');
+            const severityIcon = document.getElementById('severityIcon');
+            
+            if (severity.level === 1) {
+                severityBox.classList.add('border-l-emergency');
+                severityTitle.innerHTML = '🚨 CRITICAL EMERGENCY';
+                severityDesc.innerHTML = severity.text;
+                severityIcon.className = 'fas fa-heartbeat text-emergency text-5xl';
+                document.getElementById('ambulanceBox').classList.remove('hidden');
+            } else if (severity.level === 3) {
+                severityBox.classList.add('border-l-warning');
+                severityTitle.innerHTML = '⚠️ URGENT CARE NEEDED';
+                severityDesc.innerHTML = severity.text;
+                severityIcon.className = 'fas fa-exclamation-triangle text-warning text-5xl';
+                document.getElementById('ambulanceBox').classList.add('hidden');
+            } else {
+                severityBox.classList.add('border-l-success');
+                severityTitle.innerHTML = 'ℹ️ NON-URGENT';
+                severityDesc.innerHTML = severity.text;
+                severityIcon.className = 'fas fa-info-circle text-success text-5xl';
+                document.getElementById('ambulanceBox').classList.add('hidden');
+                // Show doctor consultation for non-urgent
+                document.getElementById('doctorConsultCTA').classList.remove('hidden');
+            }
+            
+            document.getElementById('specialtyName').innerHTML = `${specialty} <span class="text-xs text-gray-400 ml-1">specialist</span>`;
+            
+            // Generate instruction based on specialty
+            let instruction = getInstructionBySpecialty(specialty, symptoms);
+            document.getElementById('instructionText').innerHTML = instruction;
+            
+            // Get best hospitals
+            const bestHospitals = getHospitalsBySpecialty(specialty, 3);
+            
+            // Display best hospital
+            const bestDiv = document.getElementById('bestHospitalCard');
+            if (bestHospitals.length > 0) {
+                const h = bestHospitals[0];
+                bestDiv.innerHTML = `
+                    <div class="flex flex-wrap gap-6">
+                        <div class="flex-1 min-w-[200px]">
+                            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                                <h4 class="text-xl font-bold text-dark">🏥 ${h.name}</h4>
+                                <span class="px-2 py-1 bg-success/10 text-success rounded-full text-xs"><i class="fas fa-check-circle mr-1"></i>Top Match for ${specialty}</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded-full text-xs"><i class="fas fa-building mr-1"></i>${h.type}</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mb-3"><i class="fas fa-location-dot mr-1 text-primary"></i> ${h.address}</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                                <div class="flex items-center gap-1 text-gray-600"><i class="fas fa-road text-primary"></i> ${h.distance_km} km</div>
+                                <div class="flex items-center gap-1 text-gray-600"><i class="fas fa-clock text-primary"></i> ${h.eta_minutes} min ETA</div>
+                                <div class="flex items-center gap-1 text-gray-600"><i class="fas fa-star text-yellow-500"></i> ${h.rating} ★ (${h.reviews} reviews)</div>
+                                <div class="flex items-center gap-1 text-gray-600"><i class="fas fa-tag text-primary"></i> ${h.price_symbol} ${h.price_level}</div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                ${h.has_icu ? `<span class="px-2 py-1 bg-success/10 text-success rounded-full text-xs"><i class="fas fa-bed mr-1"></i>ICU Available</span>` : ''}
+                                ${h.has_ventilator ? '<span class="px-2 py-1 bg-info/10 text-info rounded-full text-xs"><i class="fas fa-lungs mr-1"></i>Ventilator</span>' : ''}
+                                ${h.has_ambulance ? '<span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"><i class="fas fa-ambulance mr-1"></i>Ambulance</span>' : ''}
+                                ${h.has_24x7 ? '<span class="px-2 py-1 bg-warning/10 text-warning rounded-full text-xs"><i class="fas fa-clock mr-1"></i>24/7</span>' : ''}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                <i class="fas fa-user-md mr-1 text-primary"></i> Doctors: ${h.doctors.join(', ')}
+                            </div>
+                            <div class="text-sm text-gray-500 mt-1">
+                                <i class="fas fa-bolt mr-1 text-primary"></i> Services: ${h.services.join(', ')}
+                            </div>
+                            <div class="text-sm text-gray-500 mt-1">
+                                <i class="fas fa-hourglass-half mr-1 text-primary"></i> Estimated wait: ${h.waiting_time} minutes
+                            </div>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="window.open('tel:${h.phone}')" class="px-5 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-semibold transition shadow-md">
+                                <i class="fas fa-phone mr-1"></i> Call Hospital
+                            </button>
+                            <button onclick="window.open('https://maps.google.com/?q=${encodeURIComponent(h.name)}+Indore', '_blank')" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-dark rounded-xl text-sm font-semibold transition">
+                                <i class="fas fa-directions mr-1"></i> Get Directions
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Display alternative hospitals
+            const altDiv = document.getElementById('altHospitalsList');
+            altDiv.innerHTML = '';
+            const alternatives = bestHospitals.slice(1);
+            if (alternatives.length > 0) {
+                alternatives.forEach(h => {
+                    altDiv.innerHTML += `
+                        <div class="bg-white rounded-xl p-4 shadow-sm flex justify-between items-center flex-wrap gap-3 border border-gray-100 hospital-card">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <div class="font-semibold text-dark">🏥 ${h.name}</div>
+                                    <span class="text-xs text-gray-500">${h.type}</span>
+                                </div>
+                                <div class="flex gap-4 text-sm text-gray-500 mt-1 flex-wrap">
+                                    <span><i class="fas fa-road text-primary mr-1"></i>${h.distance_km} km</span>
+                                    <span><i class="fas fa-clock text-primary mr-1"></i>${h.eta_minutes} min</span>
+                                    <span><i class="fas fa-star text-yellow-500 mr-1"></i>${h.rating}</span>
+                                    <span><i class="fas fa-tag text-primary mr-1"></i>${h.price_symbol}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    ${h.has_icu ? '<span class="text-xs text-success"><i class="fas fa-bed"></i> ICU</span>' : ''}
+                                    <span class="text-xs text-gray-500"><i class="fas fa-user-md"></i> ${h.doctors[0].split('(')[0]}</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="window.open('tel:${h.phone}')" class="text-primary hover:text-primary-dark text-sm font-medium">
+                                    <i class="fas fa-phone"></i> Call
+                                </button>
+                                <button onclick="window.open('https://maps.google.com/?q=${encodeURIComponent(h.name)}+Indore', '_blank')" class="text-primary hover:text-primary-dark text-sm font-medium">
+                                    <i class="fas fa-external-link-alt"></i> Navigate
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                altDiv.innerHTML = '<div class="bg-white rounded-xl p-4 text-center text-gray-500 shadow-sm">No alternative hospitals found nearby</div>';
+            }
+        }
+
+        function getInstructionBySpecialty(specialty, symptoms) {
+            const instructions = {
+                'Orthopedics': `🚨 For joint/bone pain: Rest the affected area. Apply ice pack for 15-20 minutes. Avoid putting weight on it. Take over-the-counter pain relievers like ibuprofen if safe for you. ${symptoms.includes('fracture') ? '⚠️ Do not try to straighten or move the injured area.' : 'If pain persists beyond 3 days, consult an orthopedic specialist.'}`,
+                'Cardiology': `❤️ For heart-related symptoms: Sit in a comfortable position. Loosen tight clothing. If you have prescribed nitroglycerin, take as directed. ⚠️ If chest pain persists for more than 5 minutes or spreads to arm/jaw, call emergency services IMMEDIATELY.`,
+                'Neurology': `🧠 For headache/nerve issues: Rest in a dark, quiet room. Apply cold compress to forehead. Stay hydrated. ⚠️ Seek immediate care if headache is "thunderclap" (sudden severe), or accompanied by confusion, vision changes, or neck stiffness.`,
+                'Pediatrics': `👶 For child symptoms: Keep child comfortable. Monitor temperature. Ensure fluid intake. ⚠️ Seek immediate care if child has difficulty breathing, persistent vomiting, or is unusually lethargic.`,
+                'Gynecology': `👩 For women's health: Track symptoms and their timing. Rest and stay hydrated. ⚠️ Seek immediate care for severe pelvic pain, heavy bleeding, or if pregnant with concerning symptoms.`,
+                'Dermatology': `🧴 For skin issues: Avoid scratching affected area. Use cool compresses for itching. Over-the-counter antihistamines may help. ⚠️ Seek care if rash spreads rapidly, is accompanied by fever, or shows signs of infection.`,
+                'Gastroenterology': `🍽️ For stomach issues: Stay hydrated with small sips of water. Avoid solid foods temporarily. Try the BRAT diet (Bananas, Rice, Applesauce, Toast). ⚠️ Seek care if vomiting blood, severe abdominal pain, or signs of dehydration.`,
+                'Pulmonology': `🌬️ For breathing issues: Sit upright to help breathing. Use prescribed inhaler if available. Avoid triggers. ⚠️ Difficulty breathing requires URGENT medical attention.`,
+                'ENT': `👂 For ear/nose/throat: Use saline spray for congestion. Gargle with warm salt water for sore throat. Rest your voice. ⚠️ Seek care if ear pain with discharge, difficulty swallowing, or breathing problems.`,
+                'Ophthalmology': `👁️ For eye issues: Avoid rubbing eyes. Remove contact lenses. Use lubricating eye drops. ⚠️ Seek immediate care for sudden vision loss, chemical exposure, or foreign object in eye.`,
+                'Emergency': `🚨 For emergency symptoms: Stay calm. Call emergency services (108) or have someone drive you to the nearest hospital. Do not eat or drink until assessed by a medical professional. Keep airways clear.`
+            };
+            return instructions[specialty] || instructions['Emergency'];
+        }
+
+        // WhatsApp Consultation
+        const DOCTOR_WHATSAPP_NUMBER = '918251038760';
+
+        function startWhatsAppConsultation() {
+            const symptoms = document.getElementById('consultMessage').value.trim();
+            if (!symptoms) {
+                alert(currentLanguage === 'en' ? 'Please describe your symptoms before starting the consultation.' : 'कृपया परामर्श शुरू करने से पहले अपने लक्षणों का वर्णन करें।');
+                return;
+            }
+            
+            const timestamp = new Date().toLocaleString();
+            const specialty = detectedSpecialty;
+            const severityLevel = currentSeverity === 1 ? 'Critical' : (currentSeverity === 3 ? 'Urgent' : 'Non-Urgent');
+            
+            let message = `🏥 *LifeLine AI - Doctor Consultation Request*\n\n`;
+            message += `*Patient Symptoms:*\n${symptoms}\n\n`;
+            message += `*AI Analysis:*\n`;
+            message += `• Detected Specialty: ${specialty}\n`;
+            message += `• Severity Level: ${severityLevel}\n`;
+            message += `• Consultation Type: ${selectedConsultType.toUpperCase()}\n\n`;
+            message += `*Patient Info:*\n`;
+            message += `• Language: ${currentLanguage === 'en' ? 'English' : 'Hindi'}\n`;
+            message += `• Time: ${timestamp}\n\n`;
+            message += `*Please respond to this patient as soon as possible.*`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${DOCTOR_WHATSAPP_NUMBER}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+            
+            alert(currentLanguage === 'en' ? 
+                'Redirecting to WhatsApp...\n\nYour consultation request has been sent. Please wait for the doctor to respond.' : 
+                'व्हाट्सएप पर रीडायरेक्ट किया जा रहा है...\n\nआपका परामर्श अनुरोध भेज दिया गया है। कृपया डॉक्टर के जवाब की प्रतीक्षा करें।');
+            
+            closeDoctorModal();
+            document.getElementById('consultMessage').value = '';
+        }
+
+        function selectConsultType(type) {
+            selectedConsultType = type;
+            document.querySelectorAll('.consult-type-btn').forEach(btn => {
+                btn.classList.remove('border-whatsapp', 'bg-whatsapp/5');
+                btn.classList.add('border-gray-200');
+            });
+            document.querySelector(`[data-type="${type}"]`).classList.add('border-whatsapp', 'bg-whatsapp/5');
+            document.getElementById('consultTypeSelected').classList.remove('hidden');
+            let typeText = type.charAt(0).toUpperCase() + type.slice(1);
+            document.getElementById('selectedTypeText').innerText = typeText;
+        }
+
+        // Speech Recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US,hi-IN';
+        } else {
+            const idleState = document.getElementById('idleState');
+            if (idleState) {
+                idleState.innerHTML = '<i class="fas fa-exclamation-triangle mr-2 text-warning"></i>Voice not supported. Please use Google Chrome.';
+                document.getElementById('micBtn').disabled = true;
+            }
+        }
+
+        function detectLanguage(text) {
+            const hindiPattern = /[\u0900-\u097F]/;
+            return hindiPattern.test(text) ? 'hi' : 'en';
+        }
+
+        document.getElementById('micBtn')?.addEventListener('click', () => {
+            if (!recognition) return;
+            
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('patientSaidBox').classList.add('hidden');
+            document.getElementById('doctorConsultCTA').classList.add('hidden');
+            document.getElementById('idleState').classList.add('hidden');
+            document.getElementById('listeningState').classList.remove('hidden');
+            document.getElementById('processingState').classList.add('hidden');
+            document.getElementById('micPulseRing').classList.remove('hidden');
+            document.getElementById('micBtn').classList.add('animate-pulse-primary');
+            
+            recognition.start();
+        });
+
+        recognition?.addEventListener('result', async (event) => {
+            const voiceText = event.results[0][0].transcript;
+            const detectedLang = detectLanguage(voiceText);
+            
+            if (detectedLang !== currentLanguage) {
+                setLanguage(detectedLang);
+            }
+            
+            document.getElementById('patientSaidText').textContent = `"${voiceText}"`;
+            document.getElementById('patientSaidBox').classList.remove('hidden');
+            document.getElementById('listeningState').classList.add('hidden');
+            document.getElementById('processingState').classList.remove('hidden');
+            document.getElementById('micPulseRing').classList.add('hidden');
+            document.getElementById('micBtn').classList.remove('animate-pulse-primary');
+            
+            // Auto-fill consultation message
+            const consultBox = document.getElementById('consultMessage');
+            if (consultBox) consultBox.value = voiceText;
+            
+            // Process symptoms and display results
+            setTimeout(() => {
+                displayHospitalResults(voiceText);
+                document.getElementById('processingState').classList.add('hidden');
+                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('micBtn').classList.remove('animate-pulse-primary');
+            }, 1500);
+        });
+
+        recognition?.addEventListener('error', () => {
+            document.getElementById('idleState').classList.remove('hidden');
+            document.getElementById('listeningState').classList.add('hidden');
+            document.getElementById('processingState').classList.add('hidden');
+            document.getElementById('micPulseRing').classList.add('hidden');
+            document.getElementById('micBtn').classList.remove('animate-pulse-primary');
+        });
+
+        recognition?.addEventListener('end', () => {
+            if (!document.getElementById('processingState').classList.contains('hidden')) return;
+            document.getElementById('idleState').classList.remove('hidden');
+            document.getElementById('listeningState').classList.add('hidden');
+            document.getElementById('micPulseRing').classList.add('hidden');
+            document.getElementById('micBtn').classList.remove('animate-pulse-primary');
+        });
+
+        // Hospital Finder Functions
+        function displayFilteredHospitals() {
+            const container = document.getElementById('hospitalListContainer');
+            const maxDist = parseInt(document.getElementById('filterDistance').value);
+            const specialty = document.getElementById('filterSpecialty').value;
+            const budget = document.getElementById('filterBudget').checked;
+            const mid = document.getElementById('filterMid').checked;
+            const premium = document.getElementById('filterPremium').checked;
+            const icu = document.getElementById('filterICU').checked;
+            const ventilator = document.getElementById('filterVentilator').checked;
+            const is24x7 = document.getElementById('filter24x7').checked;
+            const ambulance = document.getElementById('filterAmbulance').checked;
+            const minRating = parseFloat(document.getElementById('filterRating').value);
+            
+            let filtered = [...allHospitals];
+            
+            filtered = filtered.filter(h => h.distance_km <= maxDist);
+            if (specialty !== 'all') filtered = filtered.filter(h => h.specialty === specialty);
+            
+            const priceSelected = budget || mid || premium;
+            if (priceSelected) {
+                filtered = filtered.filter(h => {
+                    if (budget && h.price_level === 'Budget Friendly') return true;
+                    if (mid && h.price_level === 'Mid Range') return true;
+                    if (premium && h.price_level === 'Premium') return true;
+                    return false;
+                });
+            }
+            
+            if (icu) filtered = filtered.filter(h => h.has_icu);
+            if (ventilator) filtered = filtered.filter(h => h.has_ventilator);
+            if (is24x7) filtered = filtered.filter(h => h.has_24x7);
+            if (ambulance) filtered = filtered.filter(h => h.has_ambulance);
+            if (minRating > 0) filtered = filtered.filter(h => h.rating >= minRating);
+            
+            filtered.sort((a, b) => a.distance_km - b.distance_km);
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center py-8 text-gray-500">No hospitals match your filters. Try adjusting your criteria.</div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(h => `
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-3 hospital-card">
+                    <div class="flex justify-between items-start flex-wrap gap-3">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 flex-wrap mb-1">
+                                <h4 class="font-bold text-dark">🏥 ${h.name}</h4>
+                                <span class="text-xs px-2 py-0.5 ${h.type === 'Hospital' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'} rounded-full">${h.type}</span>
+                                <span class="text-xs text-gray-500">${h.price_symbol} ${h.price_level}</span>
+                            </div>
+                            <p class="text-gray-500 text-sm"><i class="fas fa-location-dot text-primary mr-1"></i>${h.address}</p>
+                            <div class="flex flex-wrap gap-3 mt-2 text-sm">
+                                <span class="text-gray-600"><i class="fas fa-road text-primary mr-1"></i>${h.distance_km} km</span>
+                                <span class="text-gray-600"><i class="fas fa-clock text-primary mr-1"></i>${h.eta_minutes} min</span>
+                                <span class="text-gray-600"><i class="fas fa-star text-yellow-500 mr-1"></i>${h.rating} ★</span>
+                                ${h.has_icu ? '<span class="text-success text-xs"><i class="fas fa-bed"></i> ICU</span>' : ''}
+                                ${h.has_ventilator ? '<span class="text-info text-xs"><i class="fas fa-lungs"></i> Ventilator</span>' : ''}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-2">
+                                <i class="fas fa-user-md text-primary mr-1"></i> ${h.doctors.slice(0,2).join(', ')}
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="window.open('tel:${h.phone}')" class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm">Call</button>
+                            <button onclick="window.open('https://maps.google.com/?q=${encodeURIComponent(h.name)}+Indore', '_blank')" class="px-3 py-1.5 bg-gray-100 rounded-lg text-sm">Navigate</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function applyFilters() { displayFilteredHospitals(); }
+        function resetFilters() {
+            document.getElementById('filterSpecialty').value = 'all';
+            document.getElementById('filterDistance').value = '10';
+            document.getElementById('filterBudget').checked = false;
+            document.getElementById('filterMid').checked = false;
+            document.getElementById('filterPremium').checked = false;
+            document.getElementById('filterICU').checked = false;
+            document.getElementById('filterVentilator').checked = false;
+            document.getElementById('filter24x7').checked = false;
+            document.getElementById('filterAmbulance').checked = false;
+            document.getElementById('filterRating').value = '0';
+            displayFilteredHospitals();
+        }
+        
+        function openHospitalFinder() { document.getElementById('hospitalModal').classList.add('active'); displayFilteredHospitals(); }
+        function closeHospitalModal() { document.getElementById('hospitalModal').classList.remove('active'); }
+        function openDoctorConsult() { document.getElementById('doctorModal').classList.add('active'); }
+        function closeDoctorModal() { document.getElementById('doctorModal').classList.remove('active'); }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            setLanguage('en');
+            console.log('LifeLine AI Ready - Complete Hospital Database Loaded');
+            console.log(`Total hospitals/clinics in database: ${allHospitals.length}`);
+        });
+    </script>
+</body>
+</html>
